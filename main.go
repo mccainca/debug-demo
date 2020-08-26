@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Square struct {
@@ -26,10 +27,18 @@ func square(c *gin.Context) {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Printf("%+v", square)
-
+	store(square)
 	squared := square.XVal * square.YVal
 
 	c.JSON(200, squared)
 
+}
+
+func store(square *Square) error {
+	database, _ := sql.Open("sqlite3", "./square.db")
+	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS square (id INTEGER PRIMARY KEY, x INTEGER, y INTEGER, timestamp TEXT)")
+	statement.Exec()
+	statement, _ = database.Prepare("INSERT INTO square (x, y, timestamp) VALUES (?, ?, datetime('now'))")
+	statement.Exec(square.XVal, square.YVal)
+	return nil
 }
